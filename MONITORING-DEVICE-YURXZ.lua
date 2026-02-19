@@ -299,12 +299,12 @@ local function sendReport()
     local desc="||"..player.Name.."||  "..EXEC_ICON.."  "..EXEC_NAME.."\nStatus: "..(IS_AFK and "**AFK**" or "**Online**").."  •  Uptime: **"..uptime.."**".."\n\u{2015}\u{2015}\u{2015}\u{2015}\u{2015}\u{2015}\u{2015}\u{2015}\u{2015}\u{2015}\u{2015}\u{2015}\u{2015}\u{2015}\u{2015}\u{2015}\u{2015}\u{2015}\u{2015}\u{2015}"
     local thumbnail=""
     pcall(function()
-        local res=game:HttpGet("https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds="..player.UserId.."&size=150x150&format=Png&isCircular=false")
+        local res=game:HttpGet("https://thumbnails.roblox.com/v1/users/avatar-bust?userIds="..player.UserId.."&size=420x420&format=Png&isCircular=false")
         local url=res:match('"imageUrl":"(https://[^"]+)"')
         if url then thumbnail=url end
     end)
     local footerText="MONITORING DEVICE YURXZ v8.0  •  "..player.Name.."  •  "..waktu
-    local body='{"username":'..enc("MONITORING DEVICE YURXZ")..',"avatar_url":'..enc(CONFIG.AVATAR_URL)..',"embeds":[{"title":'..enc("📡  YURXZ MONITOR  —  Laporan  #"..reportCount)..',"description":'..enc(desc)..',"color":'..color..',"fields":['..table.concat(fa,",")..'],"image":{"url":'..enc(thumbnail)..'},"footer":{"text":'..enc(footerText)..',"icon_url":'..enc(CONFIG.AVATAR_URL)..'}' ..'}]}'
+    local body='{"username":'..enc("MONITORING DEVICE YURXZ")..',"avatar_url":'..enc(CONFIG.AVATAR_URL)..',"embeds":[{"title":'..enc("📡  YURXZ MONITOR  —  Laporan  #"..reportCount)..',"description":'..enc(desc)..',"color":'..color..',"fields":['..table.concat(fa,",")..'],"thumbnail":{"url":'..enc(thumbnail)..'},"footer":{"text":'..enc(footerText)..',"icon_url":'..enc(CONFIG.AVATAR_URL)..'}' ..'}]}'
     local ok,_=sendWebhook(body)
     if ok then disconnectSent=false; showNotif("✅ #"..reportCount.." | +"..coinEarned.." coin | "..fischSt,true)
     else showNotif("❌ Gagal kirim #"..reportCount,false) end
