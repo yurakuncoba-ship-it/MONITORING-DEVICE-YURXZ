@@ -23,6 +23,23 @@ pcall(function() _genv = getgenv() end)
 local function gset(k,v) pcall(function() _genv[k]=v end) end
 local function gget(k) local ok,v=pcall(function() return _genv[k] end); return ok and v or nil end
 
+local SAVE_FILE = "yurxz_config.txt"
+local function saveConfig(webhook, discordid)
+    pcall(function() writefile(SAVE_FILE, webhook.."\n"..discordid) end)
+    gset("YURXZ_SAVED_WEBHOOK", webhook)
+    gset("YURXZ_SAVED_DISCORDID", discordid)
+end
+local function loadConfig()
+    local ok, data = pcall(function() return readfile(SAVE_FILE) end)
+    if ok and data and data ~= "" then
+        local w, d = data:match("^([^\n]*)\n?(.*)$")
+        return w or "", d or ""
+    end
+    local w = gget("YURXZ_SAVED_WEBHOOK") or ""
+    local d = gget("YURXZ_SAVED_DISCORDID") or ""
+    return w, d
+end
+
 if playerGui:FindFirstChild("YURXZ_v8") then playerGui:FindFirstChild("YURXZ_v8"):Destroy() end
 local oldStop = gget("MD_Stop")
 if oldStop then pcall(oldStop) end
@@ -30,9 +47,8 @@ gset("YURXZ_RUNNING", false)
 task.wait(0.1)
 gset("YURXZ_RUNNING", true)
 
-local savedWebhook = gget("YURXZ_SAVED_WEBHOOK")
+local savedWebhook, savedID = loadConfig()
 if savedWebhook and savedWebhook ~= "" then CONFIG.WEBHOOK_URL = savedWebhook end
-local savedID = gget("YURXZ_SAVED_DISCORDID")
 if savedID and savedID ~= "" then CONFIG.DISCORD_ID = savedID end
 
 local running=false; local INTERVAL=CONFIG.INTERVAL; local startTime=os.time()
@@ -288,7 +304,7 @@ local function sendReport()
         if url then thumbnail=url end
     end)
     local footerText="MONITORING DEVICE YURXZ v8.0  •  "..player.Name.."  •  "..waktu
-    local body='{"username":'..enc("MONITORING DEVICE YURXZ")..',"avatar_url":'..enc(CONFIG.AVATAR_URL)..',"embeds":[{"title":'..enc("📡  YURXZ MONITOR  —  Laporan  #"..reportCount)..',"description":'..enc(desc)..',"color":'..color..',"fields":['..table.concat(fa,",")..'],"thumbnail":{"url":'..enc(thumbnail)..'},"footer":{"text":'..enc(footerText)..',"icon_url":'..enc(CONFIG.AVATAR_URL)..'}' ..'}]}'
+    local body='{"username":'..enc("MONITORING DEVICE YURXZ")..',"avatar_url":'..enc(CONFIG.AVATAR_URL)..',"embeds":[{"title":'..enc("📡  YURXZ MONITOR  —  Laporan  #"..reportCount)..',"description":'..enc(desc)..',"color":'..color..',"fields":['..table.concat(fa,",")..'],"image":{"url":'..enc(thumbnail)..'},"footer":{"text":'..enc(footerText)..',"icon_url":'..enc(CONFIG.AVATAR_URL)..'}' ..'}]}'
     local ok,_=sendWebhook(body)
     if ok then disconnectSent=false; showNotif("✅ #"..reportCount.." | +"..coinEarned.." coin | "..fischSt,true)
     else showNotif("❌ Gagal kirim #"..reportCount,false) end
@@ -464,29 +480,35 @@ dLbl.Font=Enum.Font.Gotham; dLbl.TextXAlignment=Enum.TextXAlignment.Left
 local DiscordIDBox,SaveIDBtn,ClearIDBtn,IDSaveLbl=mkInput(Content,"Contoh: 123456789012345678",CONFIG.DISCORD_ID,6)
 
 -- Isi dari saved data
-if gget("YURXZ_SAVED_WEBHOOK") and gget("YURXZ_SAVED_WEBHOOK")~="" then
-    InputBox.Text=gget("YURXZ_SAVED_WEBHOOK"); WebhookSaveLbl.Text="✅ Tersimpan"
-end
-if gget("YURXZ_SAVED_DISCORDID") and gget("YURXZ_SAVED_DISCORDID")~="" then
-    DiscordIDBox.Text=gget("YURXZ_SAVED_DISCORDID"); IDSaveLbl.Text="✅ Tersimpan"
-end
+local sw, sd = loadConfig()
+if sw and sw~="" then InputBox.Text=sw; WebhookSaveLbl.Text="✅ Tersimpan" end
+if sd and sd~="" then DiscordIDBox.Text=sd; IDSaveLbl.Text="✅ Tersimpan" end
 
 SaveWebhookBtn.MouseButton1Click:Connect(function()
     local val=InputBox.Text:gsub("%s+","")
     if val~="" and val:find("discord%.com/api/webhooks") then
-        gset("YURXZ_SAVED_WEBHOOK",val); WebhookSaveLbl.Text="✅ Tersimpan!"; WebhookSaveLbl.TextColor3=C.green
+        local did=DiscordIDBox.Text:gsub("%s+","")
+        saveConfig(val, did)
+        WebhookSaveLbl.Text="✅ Tersimpan!"; WebhookSaveLbl.TextColor3=C.green
     else WebhookSaveLbl.Text="❌ Tidak valid!"; WebhookSaveLbl.TextColor3=C.red end
 end)
 ClearWebhookBtn.MouseButton1Click:Connect(function()
-    gset("YURXZ_SAVED_WEBHOOK",""); InputBox.Text=""; WebhookSaveLbl.Text="🗑️ Dihapus"; WebhookSaveLbl.TextColor3=C.muted
+    local did=DiscordIDBox.Text:gsub("%s+","")
+    saveConfig("", did)
+    InputBox.Text=""; WebhookSaveLbl.Text="🗑️ Dihapus"; WebhookSaveLbl.TextColor3=C.muted
 end)
 SaveIDBtn.MouseButton1Click:Connect(function()
     local val=DiscordIDBox.Text:gsub("%s+","")
-    if val~="" then gset("YURXZ_SAVED_DISCORDID",val); IDSaveLbl.Text="✅ Tersimpan!"; IDSaveLbl.TextColor3=C.green
+    if val~="" then
+        local wh=InputBox.Text:gsub("%s+","")
+        saveConfig(wh, val)
+        IDSaveLbl.Text="✅ Tersimpan!"; IDSaveLbl.TextColor3=C.green
     else IDSaveLbl.Text="❌ Kosong!"; IDSaveLbl.TextColor3=C.red end
 end)
 ClearIDBtn.MouseButton1Click:Connect(function()
-    gset("YURXZ_SAVED_DISCORDID",""); DiscordIDBox.Text=""; IDSaveLbl.Text="🗑️ Dihapus"; IDSaveLbl.TextColor3=C.muted
+    local wh=InputBox.Text:gsub("%s+","")
+    saveConfig(wh, "")
+    DiscordIDBox.Text=""; IDSaveLbl.Text="🗑️ Dihapus"; IDSaveLbl.TextColor3=C.muted
 end)
 
 -- Interval (compact, tombol kecil)
